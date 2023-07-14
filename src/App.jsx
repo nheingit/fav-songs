@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import { Web5 } from '@tbd54566975/web5'
+import { MusicCards } from './MusicCard.tsx'
 
 async function queryRecords(web5) {
     try {
@@ -26,24 +27,34 @@ async function queryRecords(web5) {
 }
 
 async function addRecords(web5, records) {
-  const RecordData = {
-    completed : false,
-      records
-  };
-
-  try {
-    // Create the record in DWN
-    const { record } = await web5.dwn.records.create({
-      data    : RecordData,
-      message : {
-        schema     : 'https://schema.org/MusicRecording',
-        dataFormat : 'application/json'
+      const promises = records.map(async (record) => {
+      if(record.song.length && record.artist.length) {
+        try {
+            const recordObj = {
+              "@context": "https://schema.org",
+              "@type": "MusicRecording",
+              "name": record.song,
+              "byArtist": {
+                "@type": "MusicGroup",
+                "name": record.artist
+              }
+            }
+          // Create the record in DWN
+          const { web5Record } = await web5.dwn.records.create({
+            data    : recordObj,
+            message : {
+              schema     : 'https://schema.org/MusicRecording',
+              dataFormat : 'application/json'
+            }
+          });
+          return web5Record;
+        } catch(e) {
+          console.warn(e)
+        }
       }
-    });
-    console.log('created record successfully: ', record)
-  } catch(e) {
-    console.warn(e)
-  }
+      });
+
+      await Promise.all(promises);
 }
 
 export default function App() {
@@ -54,40 +65,55 @@ export default function App() {
           const { web5, did: userDid } = await Web5.connect();
           setWeb5state({web5, userDid})
           let data = await queryRecords(web5)
-          console.log(data)
+          if(data.length === songs.length) return
+          setSongs(data)
       }
       createWeb5()
-  }, [])
+  }, [songs])
 
-  const [inputValues, setInputValues] = useState({
-    record1: { artist: '', song: '' },
-    record2: { artist: '', song: '' },
-    record3: { artist: '', song: '' },
-  });
+const initialState = {
+  record1: { artist: '', song: '' },
+  record2: { artist: '', song: '' },
+  record3: { artist: '', song: '' },
+};
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    const records = Object.values(inputValues);
-    await addRecords(web5state.web5, records);
-    setInputValues({
-      record1: { artist: '', song: '' },
-      record2: { artist: '', song: '' },
-      record3: { artist: '', song: '' },
-    });  // Clear the input fields
-  }
+// Load initial state from localStorage or use a default state
+const [inputValues, setInputValues] = useState(
+  () => JSON.parse(localStorage.getItem('records')) || initialState
+);
 
-  const handleInputChange = (event) => {
-    const idParts = event.target.id.split('_');
-    const recordNumber = idParts[0];
-    const key = idParts[1];
-    setInputValues(prevState => ({
-      ...prevState,
-      [recordNumber]: {
-        ...prevState[recordNumber],
-        [key]: event.target.value
-      }
-    }));
-  }
+useEffect(() => {
+  // Save to localStorage whenever inputValues changes
+  localStorage.setItem('records', JSON.stringify(inputValues));
+}, [inputValues]);
+
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  const currSongsLength = songs.length
+  const records = Object.values(inputValues);
+  await addRecords(web5state.web5, records);
+  const newSongs = await queryRecords(web5state.web5)
+  setSongs(newSongs)
+  setInputValues(initialState);  // Clear the input fields
+}
+
+const handleInputChange = (event) => {
+  const idParts = event.target.id.split('_');
+  const recordNumber = idParts[0];
+  const key = idParts[1];
+  setInputValues(prevState => ({
+    ...prevState,
+    [recordNumber]: {
+      ...prevState[recordNumber],
+      [key]: event.target.value
+    }
+  }));
+}
+
+const handleClearForm = () => {
+  setInputValues(initialState);
+}
+
 
   return (
       <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
@@ -118,10 +144,11 @@ export default function App() {
             </div>
 
             <button type="submit" className="w-full px-3 py-2 text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none">Submit</button>
+            <button onClick={handleClearForm} className="w-full px-3 py-2 text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none">Clear Inputs</button>
           </form>
         </div>
       </div>
+      <MusicCards musicData={songs} />
     </div>
   )
 }
-
