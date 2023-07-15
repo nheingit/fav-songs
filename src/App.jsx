@@ -49,12 +49,11 @@ async function addRecords(web5, records) {
           });
           return web5Record;
         } catch(e) {
-          console.warn(e)
+          console.error(e)
         }
       }
       });
-
-      await Promise.all(promises);
+    await Promise.all(promises);
 }
 
 export default function App() {
@@ -70,7 +69,7 @@ export default function App() {
               let data = await queryRecords(web5)
               if(data.length === songs.length) return
               setSongs(data)
-          } catch (e) {
+          } catch (_e) {
               setError('Failed to fetch songs. Please try again later')
           }
       }
@@ -94,13 +93,17 @@ useEffect(() => {
 }, [inputValues]);
 
 const handleSubmit = async (event) => {
-  event.preventDefault();
-  const currSongsLength = songs.length
-  const records = Object.values(inputValues);
-  await addRecords(web5state.web5, records);
-  const newSongs = await queryRecords(web5state.web5)
-  setSongs(newSongs)
-  setInputValues(initialState);  // Clear the input fields
+  try {
+      event.preventDefault();
+      const currSongsLength = songs.length
+      const records = Object.values(inputValues);
+      await addRecords(web5state.web5, records);
+      const newSongs = await queryRecords(web5state.web5)
+      setSongs(newSongs)
+      setInputValues(initialState);  // Clear the input fields
+  } catch(_e) {
+      setError('Failed to submit songs, Please try again.')
+  }
 }
 
 const handleInputChange = (event) => {
@@ -127,34 +130,73 @@ const handleClearForm = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-light-blue-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <h1 className="text-2xl font-bold">Welcome to Web5</h1>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="record1_artist" className="text-sm font-medium">Artist 1:</label>
-              <input id="record1_artist" type="text" onChange={handleInputChange} value={inputValues.record1.artist} className="w-full p-2 border border-gray-300 rounded mt-1" />
-              <label htmlFor="record1_song" className="text-sm font-medium">Favorite Song 1:</label>
-              <input id="record1_song" type="text" onChange={handleInputChange} value={inputValues.record1.song} className="w-full p-2 border border-gray-300 rounded mt-1" />
-            </div>
-
-            <div>
-              <label htmlFor="record2_artist" className="text-sm font-medium">Artist 2:</label>
-              <input id="record2_artist" type="text" onChange={handleInputChange} value={inputValues.record2.artist} className="w-full p-2 border border-gray-300 rounded mt-1" />
-              <label htmlFor="record2_song" className="text-sm font-medium">Favorite Song 2:</label>
-              <input id="record2_song" type="text" onChange={handleInputChange} value={inputValues.record2.song} className="w-full p-2 border border-gray-300 rounded mt-1" />
-            </div>
-
-            <div>
-              <label htmlFor="record3_artist" className="text-sm font-medium">Artist 3:</label>
-              <input id="record3_artist" type="text" onChange={handleInputChange} value={inputValues.record3.artist} className="w-full p-2 border border-gray-300 rounded mt-1" />
-              <label htmlFor="record3_song" className="text-sm font-medium">Favorite Song 3:</label>
-              <input id="record3_song" type="text" onChange={handleInputChange} value={inputValues.record3.song} className="w-full p-2 border border-gray-300 rounded mt-1" />
-            </div>
-
-            <button type="submit" className="w-full px-3 py-2 text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none">Submit</button>
-            <button onClick={handleClearForm} className="w-full px-3 py-2 text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none">Clear Inputs</button>
-          </form>
+          <Form 
+              handleSubmit={handleSubmit}
+              handleInputChange={handleInputChange}
+              handleClearForm={handleClearForm}
+              inputValues={inputValues}
+              error={error}
+          />
         </div>
       </div>
       <MusicCards musicData={songs} />
     </div>
   )
 }
+
+
+const InputField = ({ id, label, value, onChange }) => (
+  <div>
+    <label htmlFor={id} className="text-sm font-medium">{label}</label>
+    <input 
+      id={id} 
+      type="text" 
+      onChange={onChange} 
+      value={value} 
+      className="w-full p-2 border border-gray-300 rounded mt-1" 
+    />
+  </div>
+);
+
+const RecordInput = ({ recordNumber, handleInputChange, inputValues }) => (
+  <div>
+    <InputField 
+      id={`record${recordNumber}_artist`} 
+      label={`Artist ${recordNumber}:`}
+      value={inputValues[`record${recordNumber}`].artist} 
+      onChange={handleInputChange}
+    />
+    <InputField 
+      id={`record${recordNumber}_song`} 
+      label={`Favorite Song ${recordNumber}:`}
+      value={inputValues[`record${recordNumber}`].song} 
+      onChange={handleInputChange}
+    />
+  </div>
+);
+
+const Form = ({ handleSubmit, handleInputChange, handleClearForm, inputValues, error }) => (
+  <form onSubmit={handleSubmit} className="space-y-4">
+    {["1", "2", "3"].map(recordNumber => (
+      <RecordInput 
+        key={recordNumber}
+        recordNumber={recordNumber}
+        handleInputChange={handleInputChange}
+        inputValues={inputValues}
+      />
+    ))}
+    <button 
+      type="submit" 
+      className="w-full px-3 py-2 text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none"
+    >
+      Submit
+    </button>
+    {error && <p className="text-xl font-bold text-red-800">{error}</p>}
+    <button 
+      onClick={handleClearForm} 
+      className="w-full px-3 py-2 text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none"
+    >
+      Clear Inputs
+    </button>
+  </form>
+);
