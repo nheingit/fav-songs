@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import { Web5 } from '@tbd54566975/web5'
 import { MusicCards } from './MusicCard.tsx'
+
+const SCHEMA_URL = 'https://schema.org/MusicRecording'
 
 async function queryRecords(web5) {
     try {
         const { records } = await web5.dwn.records.query({
             message: {
                 filter: {
-                    schema: 'https://schema.org/MusicRecording'
+                    schema: SCHEMA_URL
                 },
                 dateSort: 'createdAscending'
             }
@@ -43,7 +43,7 @@ async function addRecords(web5, records) {
           const { web5Record } = await web5.dwn.records.create({
             data    : recordObj,
             message : {
-              schema     : 'https://schema.org/MusicRecording',
+              schema: SCHEMA_URL,
               dataFormat : 'application/json'
             }
           });
@@ -60,13 +60,19 @@ async function addRecords(web5, records) {
 export default function App() {
   const [web5state, setWeb5state] = useState({})
   const [songs, setSongs] = useState([])
+  const [error, setError] = useState(null);
+
   useEffect(() => {
       const createWeb5 = async () => {
-          const { web5, did: userDid } = await Web5.connect();
-          setWeb5state({web5, userDid})
-          let data = await queryRecords(web5)
-          if(data.length === songs.length) return
-          setSongs(data)
+          try {
+              const { web5, did: userDid } = await Web5.connect();
+              setWeb5state({web5, userDid})
+              let data = await queryRecords(web5)
+              if(data.length === songs.length) return
+              setSongs(data)
+          } catch (e) {
+              setError('Failed to fetch songs. Please try again later')
+          }
       }
       createWeb5()
   }, [songs])
