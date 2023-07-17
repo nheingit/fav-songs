@@ -1,5 +1,5 @@
 const mockWeb5 = {
-  connect: jest.fn(() => Promise.resolve({ web5: 'mockWeb5', did: 'mockDid' })),
+  connect: jest.fn(() => Promise.resolve({ web5: "mockWeb5", did: "mockDid" })),
   dwn: {
     records: {
       query: jest.fn(),
@@ -9,4 +9,3 @@ const mockWeb5 = {
 };
 
 export default mockWeb5;
-
