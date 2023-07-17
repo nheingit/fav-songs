@@ -33,7 +33,7 @@ function MusicCard({ data, id }) {
       // try to find official cover art
       try {
         const response = await fetch(
-          `http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${
+          `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${
             import.meta.env.VITE_AUDIO_API_KEY
           }&artist=${name}&track=${song}&autocorrect=1&format=json`,
         );
