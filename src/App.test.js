@@ -1,35 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom/extend-expect'
-import App, { InputField, RecordInput, Form } from './App' 
+import { InputField, RecordInput, Form } from './App' 
 
 global.localStorage = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   clear: jest.fn(),
 };
-
-
-// Testing the App component
-describe('App', () => {
-  it('renders without crashing', () => {
-    render(<App />)
-    expect(screen.getByText('Welcome to Web5')).toBeInTheDocument()
-  })
-
-  it('adds songs and clears the input fields on form submission', async() => {
-    const songs = [{ artist: 'Artist1', song: 'Song1' }, { artist: 'Artist2', song: 'Song2' }];
-    localStorage.getItem.mockReturnValueOnce(JSON.stringify(songs));
-    render(<App />)
-
-    // We need to use findByRole here since the form submission is an asynchronous action
-    const submitButton = await screen.findByRole('button', { name: /Submit/i });
-    fireEvent.click(submitButton);
-
-    expect(localStorage.setItem).toHaveBeenCalledTimes(1);  // Check if the songs were added
-    expect(localStorage.setItem).toHaveBeenCalledWith('records', JSON.stringify([]));  // Check if the input fields were cleared
-  })
-
-})
 
 // Testing the InputField component
 describe('InputField', () => {

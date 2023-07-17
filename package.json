@@ -11,7 +11,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@tbd54566975/web5": "^0.7.11",
+    "@tbd54566975/web5": "^0.7.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zod": "^3.21.4"
@@ -40,7 +40,7 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "setupFIlesAfterEnv": [
+    "setupFilesAfterEnv": [
       "<rootDir>/jest-setup.ts"
     ],
     "moduleNameMapper": {
